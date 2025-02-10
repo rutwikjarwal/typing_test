@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Skill Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #typing-text { font-size: 20px; margin-bottom: 10px; }
+        textarea { width: 100%; height: 100px; font-size: 16px; }
+        .result { margin-top: 10px; padding: 10px; border: 1px solid #ddd; }
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        select, textarea, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        textarea {
+            height: 100px;
+            resize: none;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .result {
+            background: #e9ecef;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Typing Skill Test</h1>
+        <label for="language-select">Choose Language:</label>
+        <select id="language-select">
+            <option value="english">English</option>
+            <option value="marathi">Marathi</option>
+        </select>
+        <label for="time-select">Choose Time:</label>
+        <select id="time-select">
+            <option value="60">1 Minute</option>
+            <option value="300">5 Minutes</option>
+            <option value="600">10 Minutes</option>
+            <option value="1200">20 Minutes</option>
+            <option value="1800">30 Minutes</option>
+        </select>
+        <p id="typing-text"></p>
+        <textarea id="text-area"></textarea>
+        <p>Time Left: <span id="timer">00:00</span></p>
+        <button id="submit-button">Submit</button>
+        <div id="stats"></div>
+    </div>
+
+    <script>
+        const englishTexts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Typing is an essential skill in the modern world.",
+            "Practice makes perfect, so keep typing!",
+            "Speed and accuracy are both important in typing.",
+            "Good typists can type without looking at the keyboard."
+        ];
+
+        const marathiTexts = [
+            "झपाट्याने धावणारा कोल्हा आळशी कुत्र्याच्या वर उडी मारतो.",
+            "टायपिंग आधुनिक जगात एक महत्त्वपूर्ण कौशल्य आहे.",
+            "सराव परिपूर्ण करतो, म्हणून टाइप करत राहा!",
+            "वेग आणि अचूकता टायपिंगसाठी दोन्ही महत्त्वाचे आहेत.",
+            "चांगले टायपिस्ट कीबोर्डकडे न पाहता टाइप करू शकतात."
+        ];
+
+        const textDisplay = document.getElementById("typing-text");
+        const textArea = document.getElementById("text-area");
+        const languageSelect = document.getElementById("language-select");
+        const timeSelect = document.getElementById("time-select");
+        const submitButton = document.getElementById("submit-button");
+        const statsContainer = document.getElementById("stats");
+        const timerElement = document.getElementById("timer");
+
+        let startTime, interval, selectedText;
+        let keystrokes = 0, errors = 0, backspaces = 0;
+        let timeLimit = 60;
+
+        function loadNewText() {
+            const texts = languageSelect.value === "english" ? englishTexts : marathiTexts;
+            selectedText = texts[Math.floor(Math.random() * texts.length)];
+            textDisplay.textContent = selectedText;
+        }
+
+        timeSelect.addEventListener("change", () => {
+            timeLimit = parseInt(timeSelect.value, 10);
+        });
+
+        textArea.addEventListener("keydown", (event) => {
+            if (!startTime) {
+                startTime = Date.now();
+                interval = setInterval(updateTimer, 1000);
+                setTimeout(endTest, timeLimit * 1000);
+            }
+            keystrokes++;
+            if (event.key === "Backspace") backspaces++;
+        });
+
+        textArea.addEventListener("input", () => {
+            let typedText = textArea.value;
+            errors = 0;
+            for (let i = 0; i < typedText.length; i++) {
+                if (typedText[i] !== selectedText[i]) errors++;
+            }
+        });
+
+        function updateTimer() {
+            let elapsed = Math.floor((Date.now() - startTime) / 1000);
+            let remaining = timeLimit - elapsed;
+            if (remaining <= 0) {
+                endTest();
+            }
+            let minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
+            let seconds = String(remaining % 60).padStart(2, "0");
+            timerElement.textContent = `${minutes}:${seconds}`;
+        }
+
+        function endTest() {
+            clearInterval(interval);
+            textArea.disabled = true;
+            submitButton.click();
+        }
+
+        submitButton.addEventListener("click", () => {
+            clearInterval(interval);
+            let accuracy = ((keystrokes - errors) / keystrokes) * 100;
+            let result = {
+                language: languageSelect.value,
+                keystrokes,
+                errors,
+                backspaces,
+                time: timerElement.textContent,
+                accuracy: accuracy.toFixed(2) + "%"
+            };
+            saveResult(result);
+            displayResults();
+            resetTest();
+        });
+
+        function saveResult(result) {
+            let results = JSON.parse(localStorage.getItem("typingResults")) || [];
+            results.push(result);
+            localStorage.setItem("typingResults", JSON.stringify(results));
+        }
+
+        function displayResults() {
+            let results = JSON.parse(localStorage.getItem("typingResults")) || [];
+            statsContainer.innerHTML = results.map(res => `
+                <div class='result'>
+                    <p><strong>Language:</strong> ${res.language}</p>
+                    <p><strong>Keystrokes:</strong> ${res.keystrokes}</p>
+                    <p><strong>Errors:</strong> ${res.errors}</p>
+                    <p><strong>Backspaces:</strong> ${res.backspaces}</p>
+                    <p><strong>Time:</strong> ${res.time}</p>
+                    <p><strong>Accuracy:</strong> ${res.accuracy}</p>
+                </div>
+            `).join("");
+        }
+
+        function resetTest() {
+            textArea.value = "";
+            textArea.disabled = false;
+            keystrokes = 0;
+            errors = 0;
+            backspaces = 0;
+            startTime = null;
+            clearInterval(interval);
+            timerElement.textContent = "00:00";
+            loadNewText();
+        }
+
+        languageSelect.addEventListener("change", loadNewText);
+        loadNewText();
+        displayResults();
+    </script>
+</body>
+</html>
